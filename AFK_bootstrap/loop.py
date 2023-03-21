@@ -430,9 +430,11 @@ def makro(communication_data, script_start_event, stage_start_event, formation_s
         stage_start_event.clear()
         if restart_event.is_set() and not stop_event.is_set():
             close_bluestacks()
+            script_start_event.clear()
             time.sleep(5)
             print('5')
             start_player(communication_data['stage_mode'])
+            script_start_event.set()
             restart_event.clear()
     if stop_event.is_set():
         send_keys_to_bluestacks('quit', [1, 1, 1, 1, 1])
