@@ -1,0 +1,8 @@
+cd C:\Users\matth\Desktop\AFK Scripts\AFK-Daily\adb\platform-tools
+adb -s localhost:62474 push "C:\Users\matth\Desktop\AFK Scripts\AFK-Daily\afk-daily.sh" /sdcard/
+adb -s localhost:62474 push "C:\Users\matth\Desktop\AFK Scripts\AFK-Daily\config\config.ini" /sdcard/
+
+adb -s localhost:62474 shell "mv /sdcard/afk-daily.sh /storage/emulated/0/scripts/afk-arena/"
+adb -s localhost:62474 shell "mv /sdcard/config.ini /storage/emulated/0/scripts/afk-arena/"
+
+chmod +x "C:\Users\matth\Desktop\AFK Scripts\AFK-Daily\afk-daily.sh"
