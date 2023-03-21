@@ -2,7 +2,12 @@
 import datetime
 import time
 import math
+import os
 
+def get_image_path(image_name):
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    image_folder = os.path.join(dir_path, "images")
+    return os.path.join(image_folder, image_name)
 
 def split_seconds(seconds):
     if seconds is None:

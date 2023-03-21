@@ -4,6 +4,7 @@ import os
 from tkinter import *
 import sys
 import pytesseract
+from shared_functions import *
 sys.path.append("C://Users//matth//AppData//Local//Packages//PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0//LocalCache//local-packages//Python311//site-packages//")
 sys.path.append("C://Program Files//Tesseract-OCR")
 # for root, dirs, files in os.walk("C:/"):
@@ -25,10 +26,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 window_title="BlueStacks App Player"
 
-def get_image_path(image_name):
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    image_folder = os.path.join(dir_path, "images")
-    return os.path.join(image_folder, image_name)
+
 
 def is_admin():
     try:

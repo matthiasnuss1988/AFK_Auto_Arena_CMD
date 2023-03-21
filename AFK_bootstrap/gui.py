@@ -1,8 +1,10 @@
+
 from tkinter import *
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
 from ttkbootstrap.tooltip import ToolTip
 from shared_functions import  disable_combat_modes, master_meter_timer,calc_scale_meters
+from shared_functions import *
 from loop import makro
 import time
 import sys
@@ -171,12 +173,12 @@ app_y_pos=0
 
 ##Set the window size, title and location
 root.title("AFK Auto Arena")
-root.iconbitmap("C:/Users/matth/Desktop/AFK_bootstrap/images/icon.ico")
+root.iconbitmap(get_image_path("icon.ico"))
 root.geometry(f'{app_width}x{app_height}+{app_x_pos}+{app_y_pos}')
 root.resizable(False, False)
 
 ##Open the background image and convert it to a tkinter-compatible format
-bg= PhotoImage(file="C:/Users/matth/Desktop/AFK_bootstrap/images/background.png")
+bg= PhotoImage(file=get_image_path("background.png"))
 my_label = Label(root, image=bg)
 my_label.place(x=0,y=0,relwidth=1, relheight=1)
 
