@@ -3,6 +3,13 @@ import datetime
 import time
 import math
 import os
+import threading
+
+lock = threading.Lock()
+
+def get_dir_path():
+    dir_path=os.path.dirname(os.path.realpath(__file__))
+    return dir_path
 
 def get_image_path(image_name):
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -11,7 +18,7 @@ def get_image_path(image_name):
 
 def split_seconds(seconds):
     if seconds is None:
-        return '--', '--', '--'
+        return '--', '--'
     else:
         hours = int(seconds) // 3600
         minutes = (int(seconds) % 3600) // 60
@@ -19,97 +26,96 @@ def split_seconds(seconds):
         return hours, minutes, seconds
 
 def calc_scale_meters(communication_data):
+    local_dict=communication_data.copy()
     list = [
-        ('formation', communication_data['formation_time'], communication_data['formation_stripe']),
-        ('stage', communication_data['stage_time'], communication_data['stage_stripe']),
-        ('script', communication_data['script_time'], communication_data['script_stripe'])
+        ('formation', local_dict['formation_time'], local_dict['formation_stripe']),
+        ('stage', local_dict['stage_time'], local_dict['stage_stripe']),
+        ('script', local_dict['script_time'], local_dict['script_stripe'])
     ]
     ref_value = 360 * 20
     for key, max_time, stripe in list:
         if key == 'stage':
-            stripe = int(360/len(communication_data['formations']))
+            stripe = int(360/len(local_dict['formations']))
         elif max_time > ref_value / 3:
             stripe = 3
         else:
             stripe = int(ref_value / max_time)
         # Update the communication_data dictionary
-        communication_data[f'{key}_stripe'] = stripe
-
-    
-      
-   
-    
- 
-
+        local_dict[f'{key}_stripe'] = stripe
+        communication_data.update(local_dict)
 
 def master_meter_timer(communication_data, callback, script_start_event, stage_start_event, formation_start_event, restart_event, stop_event,my_lock):
     while not stop_event.is_set():
+        local_dict=communication_data.copy()
         # Script meter
         if not restart_event.is_set():
             if script_start_event.is_set():
-                communication_data['script_runtime'] = communication_data['script_counter']
-                next_restart = communication_data['restart_time'] - (communication_data['script_counter'] % communication_data['restart_time'])
-                hrs, mins, secs = split_seconds(communication_data['script_runtime'])
+                local_dict['script_runtime'] = local_dict['script_counter']
+                next_restart = local_dict['restart_time'] - (local_dict['script_counter'] % local_dict['restart_time'])
+                hrs, mins, secs = split_seconds(local_dict['script_runtime'])
                 if next_restart <= 10:
-                    communication_data['script_message'] = f"Restart in {next_restart} seconds"
-                    if next_restart <= 1:
+                    local_dict['script_message'] = f"Restart in {next_restart} seconds"
+                    if next_restart == 0:
                         restart_event.set()
                 else:
-                    communication_data['script_message'] = f"Runtime: {hrs:02}:{mins:02}:{secs:02}"
-                progress = (1 - (next_restart / communication_data['restart_time'])) * 100
+                    local_dict['script_message'] = f"Runtime: {hrs:02}:{mins:02}:{secs:02}"
+                progress = (1 - (next_restart / local_dict['restart_time'])) * 100
 
-                communication_data['script_progress'] = "{:.1f}".format(progress)
-                communication_data['script_counter'] += 1
+                local_dict['script_progress'] = "{:.1f}".format(progress)
+                local_dict['script_counter'] += 1
             else:
-                communication_data.update({'script_counter': 0})
+                local_dict.update({'script_counter': 0})
 
             # Stage meter
             if stage_start_event.is_set():
-                communication_data['stage_remaining'] = communication_data['stage_time'] - communication_data['stage_counter']
-                hrs, mins, secs = split_seconds(communication_data['stage_remaining'])
-                communication_data['stage_message'] = f"Lvl. {communication_data['stage_level']}: {hrs:02}:{mins:02}:{secs:02}"
-                if communication_data['stage_remaining'] >= 0:
-                    #amount_used = communication_data['stage_time'] - communication_data['stage_remaining']
-                    actual_percentage = communication_data['stage_counter'] * 100 / communication_data['stage_time']
+                local_dict['stage_remaining'] = local_dict['stage_time'] - local_dict['stage_counter']
+                #hrs, mins, secs = split_seconds(local_dict['stage_remaining'])
+                #local_dict['stage_message'] = f"Stage: {local_dict['stage_level']}: {hrs:02}:{mins:02}:{secs:02}"
+                local_dict['stage_message'] = f"Stage: {local_dict['stage_level']}: ({local_dict['formation_active']}/{len(local_dict['formations'])})"
+                if local_dict['stage_remaining'] >= 0:
+                    #amount_used = local_dict['stage_time'] - local_dict['stage_remaining']
+                    actual_percentage = local_dict['stage_counter'] * 100 / local_dict['stage_time']
                     progress_degrees = (actual_percentage * 360) / 100
-                    stripes_needed = progress_degrees / communication_data['stage_stripe']
+                    stripes_needed = progress_degrees / local_dict['stage_stripe']
                     adjusted_stripes = math.floor(stripes_needed)
-                    displayed_progress_percentage = (adjusted_stripes * communication_data['stage_stripe'] * 100) / 360
+                    displayed_progress_percentage = (adjusted_stripes * local_dict['stage_stripe'] * 100) / 360
                     if actual_percentage == 100:
                         displayed_progress_percentage = 100
-                    #progress = communication_data['stage_counter'] * 100 / communication_data['stage_meter_max']
-                    communication_data['stage_progress'] = "{:.1f}".format(displayed_progress_percentage)
-                    communication_data['stage_counter'] += 1
+                    #progress = local_dict['stage_counter'] * 100 / local_dict['stage_meter_max']
+                    local_dict['stage_progress'] = "{:.1f}".format(displayed_progress_percentage)
+                    local_dict['stage_counter'] += 1
                     #print(progress)
-                    # if communication_data['stage_remaining'] == 0:
+                    # if local_dict['stage_remaining'] == 0:
                     #stage_start_event.clear()
             else:
-                communication_data.update({'stage_counter': 0})
+                local_dict.update({'stage_counter': 0})
 
             # Formation meter
             if formation_start_event.is_set():
-            
-                communication_data['formation_remaining'] = communication_data['formation_time'] - communication_data['formation_counter']
-                hrs, mins, secs = split_seconds(communication_data['formation_remaining'])
-                communication_data['formation_message'] = f"Team {communication_data['formation_active']}: {mins:02}:{secs:02}"
-                #print(communication_data['formation_remaining'])
-                if communication_data['formation_remaining'] >= 0:
-                    #amount_used = communication_data['formation_time'] - communication_data['formation_remaining
-                    actual_percentage = communication_data['formation_counter'] * 100 / communication_data['formation_time']
+                local_dict['formation_remaining'] = local_dict['formation_time'] - local_dict['formation_counter']
+                hrs, mins, secs = split_seconds(local_dict['formation_remaining'])
+                local_dict['formation_message'] = f"Team {local_dict['formation_active']}: {mins:02}:{secs:02}"
+                #print(local_dict['formation_remaining'])
+                if local_dict['formation_remaining'] >= 0:
+                    #amount_used = local_dict['formation_time'] - local_dict['formation_remaining
+                    actual_percentage = local_dict['formation_counter'] * 100 / local_dict['formation_time']
                     progress_degrees = (actual_percentage * 360) / 100
-                    stripes_needed = progress_degrees / communication_data['formation_stripe']
+                    stripes_needed = progress_degrees / local_dict['formation_stripe']
                     adjusted_stripes = math.floor(stripes_needed)
-                    displayed_progress_percentage = (adjusted_stripes * communication_data['formation_stripe'] * 100) / 360
+                    displayed_progress_percentage = (adjusted_stripes * local_dict['formation_stripe'] * 100) / 360
                     if actual_percentage == 100:
                         displayed_progress_percentage = 100
-                    communication_data['formation_progress'] = "{:.1f}".format(displayed_progress_percentage)
+                    local_dict['formation_progress'] = "{:.1f}".format(displayed_progress_percentage)
                     #print(progress)
-                    communication_data['formation_counter'] += 1
-                    if communication_data['formation_remaining'] == 0:
+                    local_dict['formation_counter'] += 1
+                    if local_dict['formation_remaining'] == 0:
                         formation_start_event.clear()
             else:
-                communication_data.update({'formation_counter': 0})
-            callback(communication_data)
+                local_dict.update({'formation_counter': 0})
+            callback(local_dict)
+            with lock:
+                # Update the original dictionary with the changes made in the thread's copy
+                communication_data.update(local_dict)
             time.sleep(1)
 
 
@@ -207,11 +213,11 @@ def disable_combat_modes(root, combat_mode_menu, combat_modes):
     # get the current time
     #setpoint = (datetime.datetime.now() + datetime.timedelta(hours=1)).time()
     if  current_time >= setpoint:
-            print("Now: "+str(day)+" "+str(current_time)+" is past "+ str(setpoint))
+            #print("Now: "+str(day)+" "+str(current_time)+" is past "+ str(setpoint))
             combat_modes_to_disable =  weekday_options.get(day, [])
     else:
             previous_day = days_of_week[days_of_week.index(day)-1]
-            print("Now: "+str(day)+" "+str(current_time)+" is before "+ str(setpoint)+" but we set previous day "+str(previous_day))
+            #print("Now: "+str(day)+" "+str(current_time)+" is before "+ str(setpoint)+" but we set previous day "+str(previous_day))
             combat_modes_to_disable =  weekday_options.get(previous_day, [])
     for i, combat_mode in enumerate(combat_modes):
         combat_mode_menu['menu'].entryconfig(i, state='normal')

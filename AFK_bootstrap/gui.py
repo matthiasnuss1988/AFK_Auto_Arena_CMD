@@ -14,8 +14,7 @@ import ctypes
 #import queue
 #from multiprocessing import Process, Pipe
 import threading
-def initialize_communication_data():
-    return {
+initial_communication_data= {
         'autokampf': None,
         'script_time': 0,
         'stage_time': 0,
@@ -39,9 +38,9 @@ def initialize_communication_data():
         'script_progress': 0.0,
         'script_message': '',
         'script_runtime': None,
-        'script_counter': 0,
+        'script_counter': 0
     }
-communication_data=initialize_communication_data()
+communication_data=initial_communication_data.copy()
 
 stop_event = threading.Event()
 formation_start_event= threading.Event()
@@ -60,17 +59,21 @@ def is_admin():
     print("Set script to admin")
     ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, f'"{os.path.abspath(sys.argv[0])}"', None,  win32con.SW_SHOWMINIMIZED)
     return False
-def callback_handler(communication_data):
-    with my_lock:
-        formation_meter.configure(amountused=communication_data['formation_progress'], subtext=communication_data['formation_message'])
-        stage_meter.configure( amountused=communication_data['stage_progress'], subtext=communication_data['stage_message'])
-        script_meter.configure(amountused=communication_data['script_progress'],subtext=communication_data['script_message'])
+
+def callback_handler(local_dict):
+        formation_meter.configure(amountused=local_dict['formation_progress'], subtext=local_dict['formation_message'])
+        stage_meter.configure( amountused=local_dict['stage_progress'], subtext=local_dict['stage_message'])
+        script_meter.configure(amountused=local_dict['script_progress'], subtext=local_dict['script_message'])
 
 def stop_threads():
-    stage_start_event.clear() 
-    formation_start_event.clear() 
-    restart_event.clear()
-    script_start_event.clear() 
+    if stage_start_event.is_set():
+        stage_start_event.clear() 
+    if formation_start_event.is_set():
+        formation_start_event.clear() 
+    if restart_event.is_set():
+        restart_event.clear()
+    if script_start_event.is_set():
+        script_start_event.clear() 
     stop_event.set()
     start_button.config(state="normal")
     stop_button.config(state="disabled")
@@ -86,40 +89,40 @@ def start_script():
     global communication_data
     if stop_event.is_set():
         stop_event.clear()
-    else:
-        communication_data=initialize_communication_data()
-        #global process, parent_conn
-        time_mappings = {
-        "1 h": 3600,
-        "3 h": 180*60,
-        "6 h": 360*60,
-        "infinite loop": 9999*60
-        }
-        script_time=selected_script_time.get()
-        
-        combat_mode = selected_combat_mode.get()
-        meter_labelFrame.configure(text=f"Combat mode:  {combat_mode}")
-        combat_modes_dict = {"Campaign": 1, "King's Tower": 2, "Celestial Sanctum": 3, "Tower of Light": 4, 
-                        "The Brutal Citadel": 5, "Infernal Fortress": 6, "The Forsaken Necropolis": 7, 
-                        "The World Tree": 8}
-        communication_data['script_time'] = time_mappings.get(script_time,60)
-        communication_data['stage_mode']= combat_modes_dict.get(combat_mode, 1) # map empty or not found case to Campaign (1)
-        communication_data['formation_time'] = int(float(entry_formation_time.get()))*60
-        communication_data['formations']=calculate_checked_indices()
-        communication_data['stage_time']=(communication_data['formation_time']+2.5)*len(communication_data['formations'])
-        calc_scale_meters(communication_data)
-        print(communication_data['stage_time'])
-        formation_meter.configure(stripethickness=communication_data['formation_stripe'], subtext=communication_data['formation_message'])
-        stage_meter.configure(stripethickness=communication_data['stage_stripe'],  subtext=communication_data['stage_message'])
-        script_meter.configure(stripethickness=communication_data['script_stripe'], subtext=communication_data['script_message'])
-        start_threads()
-        start_button.config(state="disabled")
-        stop_button.config(state="normal")
-        clear_button.config(state="disabled")
-        print(script_start_event,stage_start_event,formation_start_event,stop_event)
+
+    communication_data=initial_communication_data.copy()
+
+    # Create a mapping of time options to seconds
+    time_mappings = {"1 h": 3600, "3 h": 180*60, "6 h": 360*60, "infinite loop": 9999*60}
+    script_time = time_mappings.get(selected_script_time.get(), 60)
+    
+    # Set up combat_modes_dict and get the selected combat mode
+    combat_modes_dict = {"Campaign": 1,"King's Tower": 2,"Celestial Sanctum": 3,"Tower of Light": 4, "The Brutal Citadel": 5,"Infernal Fortress": 6,"The Forsaken Necropolis": 7,"The World Tree": 8}
+    combat_mode = selected_combat_mode.get()
+    stage_mode = combat_modes_dict.get(combat_mode, 1) # map empty or not found case to Campaign (1)
+
+    # Calculate and update communication data
+    communication_data['script_time'] = script_time
+    communication_data['stage_mode'] = stage_mode
+    communication_data['formation_time'] = int(float(entry_formation_time.get()))*60
+    communication_data['formations'] = calculate_checked_indices()
+    communication_data['stage_time'] = (communication_data['formation_time']+5)*len(communication_data['formations'])
+
+    # Update meters
+    calc_scale_meters(communication_data)
+    meter_labelFrame.configure(text=f"Combat mode:  {combat_mode}")
+    formation_meter.configure(stripethickness=communication_data['formation_stripe'], subtext=communication_data['formation_message'])
+    stage_meter.configure(stripethickness=communication_data['stage_stripe'],  subtext=communication_data['stage_message'])
+    script_meter.configure(stripethickness=communication_data['script_stripe'], subtext=communication_data['script_message'])
+
+    # Start threads and configure button states
+    start_threads()
+    start_button.config(state="disabled")
+    stop_button.config(state="normal")
+    clear_button.config(state="disabled")
 
 def clear_entry():
-    communication_data=initialize_communication_data()
+    communication_data=initial_communication_data.copy()
     start_button.config(state="normal")
     stop_button.config(state="normal")
     entry_formation_time.configure(foreground='gray')
