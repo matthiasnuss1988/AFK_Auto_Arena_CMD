@@ -2,15 +2,11 @@ from tkinter import *
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
 from ttkbootstrap.tooltip import ToolTip
-#from shared_functions import  disable_combat_modes, master_meter_timer,calc_scale_meters
 from Shared_functions import *
 import Vision 
 from Vision import read_bluestacks_config
 from Loop import makro, is_admin
 import sys
-
-#import queue
-#from multiprocessing import Process, Pipe
 import threading
 
 initial_communication_data= {
@@ -60,8 +56,17 @@ my_lock = threading.Lock()
 #     print("Set script to admin")
 #     ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, f'"{os.path.abspath(sys.argv[0])}"', None,  win32con.SW_SHOWMINIMIZED)
 #     return False
+def update_label_text(level_inc):
+    triangle_arrow = "\u25b2"  # Unicode character for a triangle pointing up
+    existing_text = meter_labelFrame.cget('text')
+    if level_inc != 0:
+        new_text = existing_text + f" {triangle_arrow} {level_inc}"
+        meter_labelFrame.configure(text=new_text)
+        meter_labelFrame.labelwidget().tag_add("green", f"{len(existing_text)}", "end")
+        meter_labelFrame.labelwidget().tag_config("green", foreground="green")
 
 def callback_handler(local_dict):
+        update_label_text(local_dict['level_inc'])
         formation_meter.configure(amountused=local_dict['formation_progress'], subtext=local_dict['formation_message'])
         stage_meter.configure( amountused=local_dict['stage_progress'], subtext=local_dict['stage_message'])
         script_meter.configure(amountused=local_dict['script_progress'], subtext=local_dict['script_message'])
@@ -367,8 +372,8 @@ tooltip3=ToolTip(combat_mode_menu,text='Here you specify the battle mode that yo
 #         script_meter.configure(stripethickness=calc_stripethickness(communication_data['script_time']),amountused=communication_data['script_progress'],subtext=communication_data['script_message'])
 #     # Schedule the function to run again after a delay
 #     root.after(1000, update_widget)
-if not is_admin():
-    sys.exit() 
+# if not is_admin():
+#     sys.exit() 
 disable_combat_modes(root,combat_mode_menu,combat_modes)
 Vision.bs_width,Vision.bs_height,Vision.bs_dpi=read_bluestacks_config()
 

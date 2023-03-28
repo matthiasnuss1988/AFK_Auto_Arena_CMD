@@ -342,3 +342,5 @@ def find_image(filename, threshold=0.8):
 # end_time = time.time()
 # elapsed_time = end_time - start_time
 # print(f"Elapsed time: {elapsed_time:.2f} seconds")
+
+#print(find_image('victory.png', threshold=0.85))

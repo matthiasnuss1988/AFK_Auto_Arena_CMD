@@ -1,6 +1,7 @@
 import os
 import sqlite3
 from Stage_calculation import return_valid_stage
+
 def file_path(name):
     dir_path=os.path.dirname(os.path.realpath(__file__))
     path_to_name = os.path.join(dir_path, name)
@@ -80,9 +81,19 @@ def get_combat_mode(number):
         else:
             raise ValueError("Number out of range.")
     except ValueError:
-        return "Invalid input. Please enter a number between 1 and 8."
+          return f"Invalid input '{number}'. Please enter a number between 1 and 8."
 
 def initialize_stages(database_name):
+    mode_to_number = {
+    "Campaign": 1,
+    "King's Tower": 2,
+    "Celestial Sanctum": 3,
+    "Tower of Light": 4,
+    "The Brutal Citadel": 5,
+    "Infernal Fortress": 6,
+    "The Forsaken Necropolis": 7,
+    "The World Tree": 8
+    }
     if is_database_empty(database_name):
         initial_data = {
             "Campaign": [None],
@@ -95,8 +106,9 @@ def initialize_stages(database_name):
             "The World Tree": [None]
         }
         for stage_mode, stages in initial_data.items():
+            mode_number = mode_to_number[stage_mode]
             for stage in stages:
-                append_stages_to_database(stage_mode, stage, database_name)
+                append_stages_to_database(mode_number, stage, database_name)
 
 def interpolate_stage_update(valid_stage, latest_stage):
     chapter_ranges = {

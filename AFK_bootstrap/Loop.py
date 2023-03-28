@@ -5,17 +5,10 @@ import sys
 from Vision import *
 from Shared_functions import *
 sys.path.append("C://Users//matth//AppData//Local//Packages//PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0//LocalCache//local-packages//Python311//site-packages//")
-
-# for root, dirs, files in os.walk("C:/"):
-#     if "tesseract.exe" in files:
-#         path_tesseract = os.path.join(root, "tesseract.exe")
-#         break
-# else:
-#     print("Error: HD-Player.exe not found")
-
-#pytesseract.pytesseract.tesseract_cmd = r'{path_tesseract}'
 import pyautogui
 import ctypes
+
+
 pyautogui.FAILSAFE = False
 
 
@@ -209,8 +202,8 @@ def send_keys_to_bluestacks(window_handle, sequence, delay=None):
 
 
 def start_player(stage_mode):
-    if not is_admin():
-       sys.exit()  
+    # if not is_admin():
+    #    sys.exit()  
     #Search for HD-Player.exe file
 
     for root, dirs, files in os.walk("C:/"):
@@ -282,6 +275,7 @@ def makro(communication_data, script_start_event, stage_start_event, formation_s
     
     # Initialize missed_iterations variable
     missed_iterations = 0
+
     while not stop_event.is_set():
         temp_dict = communication_data.copy()  # Copy communication_data to temp_dict in the outer while loop
         temp_dict['victories'] = 0
@@ -290,20 +284,22 @@ def makro(communication_data, script_start_event, stage_start_event, formation_s
         num_teams = len(communication_data['formations'])
 
         if temp_dict['level_inc'] == 0:  # Perform image recognition only for the first iteration
-            temp_dict['stage_level'] = image_recog(temp_dict['stage_mode'])
+            temp_dict['stage_level'] = image_recog(temp_dict['stage_mode'],liveview='Yes')
             first_stage=temp_dict['stage_level']
+            print(f"No victory yet {first_stage}")
             if not first_stage:
                 missed_iterations += 1
-            append_stages_to_database(temp_dict['stage_mode'], temp_dict['stage_level'], database_name)
+            #append_stages_to_database(temp_dict['stage_mode'], temp_dict['stage_level'], database_name)
 
         if temp_dict['level_inc'] !=0:
             if not first_stage:
                 temp_dict['stage_level'] = image_recog(temp_dict['stage_mode'])
                 first_stage=temp_dict['stage_level']
+                print(f"After victory {first_stage}")
                 if not first_stage:
                     missed_iterations += 1
             temp_dict['stage_level'] = str(int(first_stage) + int(temp_dict['level_inc']) - missed_iterations)  # Add increment to stage_level
-            append_stages_to_database(temp_dict['stage_mode'], temp_dict['stage_level'], database_name)
+            #append_stages_to_database(temp_dict['stage_mode'], temp_dict['stage_level'], database_name)
 
         print(temp_dict['stage_mode'], temp_dict['stage_level'], database_name)
 
@@ -318,16 +314,20 @@ def makro(communication_data, script_start_event, stage_start_event, formation_s
                 stage_start_event.set()
             formation_start_event.set()
             while formation_start_event.is_set() and not stop_event.is_set() and not restart_event.is_set():
-                victory_found = find_image("victory.png", threshold=0.9)
+                victory_found = find_image("victory.png", threshold=0.84)
                 if victory_found:
                     print("Victory detected")
-                    temp_dict['victories'] += 1
+                    temp_dict['victories'] +=1
+                    with my_lock:
+                        communication_data['victories'] +=1
                     if temp_dict['victories'] == 3:
-                        temp_dict['level_inc'] += 1  # Increment the level_inc if 3 victories were found
+                        append_stages_to_database(temp_dict['stage_mode'], temp_dict['stage_level'], database_name)
+                        with my_lock:
+                                communication_data['level_inc'] +=1
                         formation_start_event.clear()
                         break
                     time.sleep(3)  # Wait for the cooldown period
-                time.sleep(0.2)
+                time.sleep(0.15)
             print(f"\tTeam has finished\n")
             if temp_dict['victories']== 3:
                 iteration_end_time = process_victory(window_handle)
@@ -339,8 +339,10 @@ def makro(communication_data, script_start_event, stage_start_event, formation_s
             average_time = total_time / num_iterations
             temp_dict['stage_time'] = total_time + average_time * (num_teams - num_iterations)
             print(f"\tStage needs in average {temp_dict['stage_time']} seconds\n")
-
-            if stop_event.is_set():
+            if temp_dict['victories'] == 3:
+                temp_dict['victories'] = 0
+                break
+            elif stop_event.is_set():
                 break
             elif restart_event.is_set():
                 break
