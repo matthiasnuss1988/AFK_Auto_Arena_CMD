@@ -7,6 +7,7 @@ from Shared_functions import *
 sys.path.append("C://Users//matth//AppData//Local//Packages//PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0//LocalCache//local-packages//Python311//site-packages//")
 import pyautogui
 import ctypes
+import Vision 
 
 
 pyautogui.FAILSAFE = False
@@ -201,18 +202,24 @@ def send_keys_to_bluestacks(window_handle, sequence, delay=None):
         raise ValueError("Invalid delay type. Must be a number or a list of numbers.")
 
 
-def start_player(stage_mode):
+def start_player(dict):
     # if not is_admin():
     #    sys.exit()  
-    #Search for HD-Player.exe file
+     # Search for bluestacks config and HD-Player.exe file
+    Vision.bs_width,Vision.bs_height,Vision.bs_dpi,path_player = search_for_apps(dict)
 
-    for root, dirs, files in os.walk("C:/"):
-        if "HD-Player.exe" in files:
-            path_player = os.path.join(root, "HD-Player.exe")
-            break
-    else:
+    # If HD-Player.exe not found, print error message and return
+    if path_player is None:
         print("Error: HD-Player.exe not found")
         return
+
+    # for root, dirs, files in os.walk("C:/"):
+    #     if "HD-Player.exe" in files:
+    #         path_player = os.path.join(root, "HD-Player.exe")
+    #         break
+    # else:
+    #     print("Error: HD-Player.exe not found")
+    #     return
     
     cmd_args = ['--cmd', 'launchApp']
     package = '--package com.lilithgame.hgame.gp'
@@ -249,7 +256,7 @@ def start_player(stage_mode):
         initialize_stages(database_name)
         #window_handle = win32gui.FindWindow(None, window_title)
         accurate_sleep(2)
-        send_keys_to_bluestacks(window_handle, stage_mode,2) 
+        send_keys_to_bluestacks(window_handle, dict['stage_mode'],2) 
         return window_handle 
     except OSError as e:
         print(f"Error starting the player: {e}")
@@ -270,7 +277,7 @@ def process_victory(window_handle):
 
 def makro(communication_data, script_start_event, stage_start_event, formation_start_event, restart_event, stop_event, my_lock):
     print('\tStart scripting\n')
-    window_handle = start_player(communication_data['stage_mode'])
+    window_handle = start_player(communication_data)
     script_start_event.set()
     
     # Initialize missed_iterations variable

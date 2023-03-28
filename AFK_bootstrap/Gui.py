@@ -3,11 +3,10 @@ import ttkbootstrap as tb
 from ttkbootstrap.constants import *
 from ttkbootstrap.tooltip import ToolTip
 from Shared_functions import *
-import Vision 
-from Vision import read_bluestacks_config
+#from Vision import read_bluestacks_config
 from Loop import makro, is_admin
-import sys
 import threading
+import sys
 
 initial_communication_data= {
         'autokampf': None,
@@ -35,7 +34,8 @@ initial_communication_data= {
         'script_runtime': None,
         'script_counter': 0,
         'victories':0,
-        'level_inc':0
+        'level_inc':0,
+        'percent_load_app':0
     }
 communication_data=initial_communication_data.copy()
 
@@ -65,7 +65,11 @@ def update_label_text(level_inc):
         meter_labelFrame.labelwidget().tag_add("green", f"{len(existing_text)}", "end")
         meter_labelFrame.labelwidget().tag_config("green", foreground="green")
 
+def update_ui(local_dict):
+    root.after(0, callback_handler, local_dict)
+
 def callback_handler(local_dict):
+        progressbar.configure(value=local_dict['percent_load_app'], text=f"{local_dict['percent_load_app']}%")
         update_label_text(local_dict['level_inc'])
         formation_meter.configure(amountused=local_dict['formation_progress'], subtext=local_dict['formation_message'])
         stage_meter.configure( amountused=local_dict['stage_progress'], subtext=local_dict['stage_message'])
@@ -354,6 +358,13 @@ for i in range(5):
  
 formation_window=my_canvas.create_window(4*off_x+line_width-1-meterdim-4-4,meter_height-off_y*7+2,width=int((line_width-1)/3), anchor="nw",window=formation_labelFrame)
 
+progressbar_width = int((2/3) * (line_width - 1))
+progressbar_height = 28 # set height as required
+progressbar_x = 4 * off_x
+progressbar_y = meter_height - (7 * off_y) + 2
+progressbar = tb.Floodgauge(my_canvas,font=('Helvetica', 18, ), mode='determinate',maximum=100,  style='success.Horizontal.TProgressbar',length=progressbar_width-5)
+progressbar_window = my_canvas.create_window(progressbar_x, progressbar_y, width=progressbar_width,height=progressbar_height, anchor="nw", window=progressbar)
+
 #Tooltips
 tooltip1=ToolTip(entry_formation_time,text='Here you specify the combat time per formation, e.g., 3 min for easy, 5 min for medium and 10 min for hard combats',bootstyle=(SECONDARY,INVERSE))
 tooltip2=ToolTip(script_time_menu,text='Here you specify the total running time of the battle mode, e.g., 1 h, 3 h, 6 h or in infinite loop.',bootstyle=(SECONDARY,INVERSE))
@@ -372,10 +383,10 @@ tooltip3=ToolTip(combat_mode_menu,text='Here you specify the battle mode that yo
 #         script_meter.configure(stripethickness=calc_stripethickness(communication_data['script_time']),amountused=communication_data['script_progress'],subtext=communication_data['script_message'])
 #     # Schedule the function to run again after a delay
 #     root.after(1000, update_widget)
-# if not is_admin():
-#     sys.exit() 
+if not is_admin():
+    sys.exit() 
 disable_combat_modes(root,combat_mode_menu,combat_modes)
-Vision.bs_width,Vision.bs_height,Vision.bs_dpi=read_bluestacks_config()
+
 
 
 root.mainloop()

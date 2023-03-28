@@ -13,6 +13,86 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 sys.path.append("C://Users//matth//AppData//Local//Packages//PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0//LocalCache//local-packages//Python311//site-packages//")
 sys.path.append("C://Program Files//Tesseract-OCR")
 
+# def search_for_apps(dict):
+#     c_drive = "C:\\"
+#     file_name = "bluestacks.conf"
+#     path_player = None
+#     bs_width = ''
+#     bs_height = ''
+#     bs_dpi = ''
+#     total_dirs = 0
+#     searched_dirs = 0
+
+#     for root, dirs, files in os.walk(c_drive):
+#         total_dirs += len(dirs)
+#         if file_name in files:
+#             file_path = os.path.join(root, file_name)
+#             with open(file_path, 'r') as file:
+#                 for line in file:
+#                     if 'fb_height' in line:
+#                         bs_height = line.split('=')[1].strip().replace('"', '')
+#                     elif 'fb_width' in line:
+#                         bs_width = line.split('=')[1].strip().replace('"', '')
+#                     elif 'dpi' in line:
+#                         bs_dpi = line.split('=')[1].strip().replace('"', '')
+#             break
+
+#         if path_player is None and 'HD-Player.exe' in files:
+#             path_player = os.path.join(root, "HD-Player.exe")
+
+#         searched_dirs += 1
+#         percent_load_app= int((searched_dirs / total_dirs) * 100)
+#         dict['percent_load_app']=percent_load_app
+#         print(percent_load_app)
+
+#     return int(bs_width), int(bs_height), int(bs_dpi), path_player
+
+def search_for_apps(dict):
+    c_drive = "C:\\"
+    file_name = "bluestacks.conf"
+    path_player = None
+    bs_width = ''
+    bs_height = ''
+    bs_dpi = ''
+    total_dirs = 0
+    searched_dirs = 0
+
+    for root, dirs, files in os.walk(c_drive):
+        total_dirs += len(dirs)
+        if file_name in files:
+            file_path = os.path.join(root, file_name)
+            with open(file_path, 'r') as file:
+                for line in file:
+                    if 'fb_height' in line:
+                        bs_height = line.split('=')[1].strip().replace('"', '')
+                    elif 'fb_width' in line:
+                        bs_width = line.split('=')[1].strip().replace('"', '')
+                    elif 'dpi' in line:
+                        bs_dpi = line.split('=')[1].strip().replace('"', '')
+            searched_dirs += 1
+            percent_load_app = int((searched_dirs / total_dirs) * 100)
+            dict['percent_load_app']=percent_load_app
+            continue
+
+        if path_player is None and 'HD-Player.exe' in files:
+            path_player = os.path.join(root, "HD-Player.exe")
+            searched_dirs += 1
+            percent_load_app = int((searched_dirs / total_dirs) * 100)
+            dict['percent_load_app']=percent_load_app
+
+        if path_player is not None and bs_width and bs_height and bs_dpi:
+            searched_dirs += 1
+            percent_load_app = int((searched_dirs / total_dirs) * 100)
+            dict['percent_load_app']=percent_load_app
+            break
+
+        searched_dirs += 1
+        percent_load_app = int((searched_dirs / total_dirs) * 100)
+        dict['percent_load_app']=percent_load_app
+        print(percent_load_app)
+    return int(bs_width), int(bs_height), int(bs_dpi), path_player
+
+
 def read_bluestacks_config():
     c_drive = "C:\\"
     file_name = "bluestacks.conf"
