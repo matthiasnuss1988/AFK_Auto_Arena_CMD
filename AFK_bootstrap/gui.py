@@ -1,19 +1,18 @@
-
 from tkinter import *
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
 from ttkbootstrap.tooltip import ToolTip
-from shared_functions import  disable_combat_modes, master_meter_timer,calc_scale_meters
-from shared_functions import *
-from loop import makro
-import time
+#from shared_functions import  disable_combat_modes, master_meter_timer,calc_scale_meters
+from Shared_functions import *
+import Vision 
+from Vision import read_bluestacks_config
+from Loop import makro, is_admin
 import sys
-import os
-import win32con
-import ctypes
+
 #import queue
 #from multiprocessing import Process, Pipe
 import threading
+
 initial_communication_data= {
         'autokampf': None,
         'script_time': 0,
@@ -38,7 +37,9 @@ initial_communication_data= {
         'script_progress': 0.0,
         'script_message': '',
         'script_runtime': None,
-        'script_counter': 0
+        'script_counter': 0,
+        'victories':0,
+        'level_inc':0
     }
 communication_data=initial_communication_data.copy()
 
@@ -49,22 +50,22 @@ script_start_event= threading.Event()
 restart_event= threading.Event()
 my_lock = threading.Lock()
 
-def is_admin():
-    try:
-        if ctypes.windll.shell32.IsUserAnAdmin():
-            print("Script is admin")
-            return True
-    except:
-        pass
-    print("Set script to admin")
-    ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, f'"{os.path.abspath(sys.argv[0])}"', None,  win32con.SW_SHOWMINIMIZED)
-    return False
+# def is_admin():
+#     try:
+#         if ctypes.windll.shell32.IsUserAnAdmin():
+#             print("Script is admin")
+#             return True
+#     except:
+#         pass
+#     print("Set script to admin")
+#     ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, f'"{os.path.abspath(sys.argv[0])}"', None,  win32con.SW_SHOWMINIMIZED)
+#     return False
 
 def callback_handler(local_dict):
         formation_meter.configure(amountused=local_dict['formation_progress'], subtext=local_dict['formation_message'])
         stage_meter.configure( amountused=local_dict['stage_progress'], subtext=local_dict['stage_message'])
         script_meter.configure(amountused=local_dict['script_progress'], subtext=local_dict['script_message'])
-
+        
 def stop_threads():
     if stage_start_event.is_set():
         stage_start_event.clear() 
@@ -157,10 +158,6 @@ def on_entry_keypress(event):
         return None
     else:
         return "break"
-
-
-
-
 
 
 #Create the main application
@@ -358,7 +355,7 @@ tooltip2=ToolTip(script_time_menu,text='Here you specify the total running time 
 tooltip3=ToolTip(combat_mode_menu,text='Here you specify the battle mode that you want your teams to combat in.',bootstyle=(SECONDARY,INVERSE))
 
 
-disable_combat_modes(root,combat_mode_menu,combat_modes)
+
 
 
 # def update_widget():
@@ -372,5 +369,9 @@ disable_combat_modes(root,combat_mode_menu,combat_modes)
 #     root.after(1000, update_widget)
 if not is_admin():
     sys.exit() 
+disable_combat_modes(root,combat_mode_menu,combat_modes)
+Vision.bs_width,Vision.bs_height,Vision.bs_dpi=read_bluestacks_config()
+
+
 root.mainloop()
 

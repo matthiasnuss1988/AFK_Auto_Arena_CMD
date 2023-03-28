@@ -4,8 +4,10 @@ import time
 import math
 import os
 import threading
+from Database import *
 
 lock = threading.Lock()
+database_name = file_path('config.db')
 
 def get_dir_path():
     dir_path=os.path.dirname(os.path.realpath(__file__))
@@ -71,7 +73,7 @@ def master_meter_timer(communication_data, callback, script_start_event, stage_s
                 local_dict['stage_remaining'] = local_dict['stage_time'] - local_dict['stage_counter']
                 #hrs, mins, secs = split_seconds(local_dict['stage_remaining'])
                 #local_dict['stage_message'] = f"Stage: {local_dict['stage_level']}: {hrs:02}:{mins:02}:{secs:02}"
-                local_dict['stage_message'] = f"Stage: {local_dict['stage_level']}: ({local_dict['formation_active']}/{len(local_dict['formations'])})"
+                local_dict['stage_message'] = f"Stage: {get_latest_stage(database_name).get(get_combat_mode(local_dict['stage_mode']))}: ({local_dict['victories']}/3)"
                 if local_dict['stage_remaining'] >= 0:
                     #amount_used = local_dict['stage_time'] - local_dict['stage_remaining']
                     actual_percentage = local_dict['stage_counter'] * 100 / local_dict['stage_time']
