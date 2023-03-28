@@ -16,10 +16,9 @@ sys.path.append("C://Program Files//Tesseract-OCR")
 def read_bluestacks_config():
     c_drive = "C:\\"
     file_name = "bluestacks.conf"
-    dpi = None
-    fb_height = None
-    fb_width = None
-
+    bs_width=''
+    bs_height=''
+    bs_dpi=''
     for root, dirs, files in os.walk(c_drive):
         if file_name in files:
             file_path = os.path.join(root, file_name)
@@ -28,12 +27,12 @@ def read_bluestacks_config():
         print("BlueStacks configuration file not found.")
     with open(file_path, 'r') as file:
         for line in file:
-            if 'bst.instance.Pie64.dpi=' in line:
-                bs_dpi = line.split('=')[1].strip().replace('"', '')
-            elif 'bst.instance.Pie64.fb_height=' in line:
+            if 'fb_height' in line:
                 bs_height = line.split('=')[1].strip().replace('"', '')
-            elif 'bst.instance.Pie64.fb_width=' in line:
+            elif 'fb_width' in line:
                 bs_width = line.split('=')[1].strip().replace('"', '')
+            elif 'dpi' in line:
+                bs_dpi = line.split('=')[1].strip().replace('"', '')
     return int(bs_width), int(bs_height), int(bs_dpi)
 
 
